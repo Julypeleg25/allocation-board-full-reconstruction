@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgis/postgis:14-3.3
+    container_name: allocation-lab-postgres
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:55432:5432'
+    environment:
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab_only
+      POSTGRES_DB: allocation_lab
+    command: ["postgres", "-c", "work_mem=4MB", "-c", "max_connections=80", "-c", "shared_buffers=256MB", "-c", "log_min_duration_statement=200"]
+    volumes:
+      - pg_lab_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U lab -d allocation_lab"]
+      interval: 4s
+      timeout: 4s
+      retries: 30
+volumes:
+  pg_lab_data:

@@ -1,0 +1,39 @@
+{
+  "name": "allocation-board-full-reconstruction",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Synthetic complete investigation environment matching photographed allocation-board architecture, excluding pagination PR",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run build:shared && npm run start:dev -w @lab/api",
+    "dev:client": "npm run build:shared && npm run start -w @lab/client",
+    "build:api": "npm run build:shared && npm run build -w @lab/api",
+    "build:client": "npm run build:shared && npm run build -w @lab/client",
+    "build:shared": "npm run build -w @lab/shared",
+    "db:up": "docker compose -f database/compose.yaml up -d",
+    "db:down": "docker compose -f database/compose.yaml down",
+    "db:seed:smoke": "node scripts/reset-seed.mjs smoke",
+    "db:seed:profile": "node scripts/reset-seed.mjs profile",
+    "db:stats": "node scripts/sql.mjs database/diagnostics/cardinality.sql",
+    "db:explain": "node scripts/explain.mjs",
+    "bench:scenarios": "node scripts/scenario.mjs",
+    "bench:parity": "node scripts/parity.mjs",
+    "load": "node scripts/load.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "verify": "npm run check && npm test",
+    "db:inflate": "node scripts/inflate.mjs",
+    "benchmark:client": "npm run build:shared && node scripts/client-algorithms.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "tsx": "^4.20.0",
+    "pg": "^8.16.0"
+  }
+}

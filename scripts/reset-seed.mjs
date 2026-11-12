@@ -1,0 +1,24 @@
+import fs from 'node:fs/promises';
+import {fileURLToPath} from 'node:url';
+import {resolve,dirname} from 'node:path';
+import {withDb,safeConnection} from './pg.mjs';
+import {replaceSeed,expectedMembership,PROFILES} from './profile.mjs';
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+const profile=process.argv[2];
+if(!PROFILES[profile])throw Error('Usage: npm run db:seed:smoke | db:seed:profile');
+console.info('Target:',safeConnection(), 'profile:',profile);
+if(profile==='profile')console.warn('PROFILE: >2 million rows and potentially GBs of disk. Existing LOCAL lab rows will be DELETED.');
+const schema=await fs.readFile(resolve(root,'database/schema/01-create.sql'),'utf8');
+const seed=replaceSeed(await fs.readFile(resolve(root,'database/seed/02-seed.sql'),'utf8'),profile);
+const indexes=await fs.readFile(resolve(root,'database/schema/02-indexes.sql'),'utf8');
+const started=Date.now();
+await withDb(async db=>{
+ console.info('Creating schema...');await db.query(schema);
+ console.info('Seeding synthetic relations...');await db.query(seed);
+ console.info('Creating intentionally duplicated indexes for measurements...');await db.query(indexes);
+ const row=await db.query(`SELECT count(*)::int n FROM replications."operationalPlan" p CROSS JOIN LATERAL unnest(p."attackDemandIds") x`);
+ const actual=row.rows[0].n;
+ if(actual!==expectedMembership(profile))throw Error(`Membership mismatch ${actual} !== ${expectedMembership(profile)}`);
+ console.info('Seed validation:',actual,'plan demand memberships');
+});
+console.info('Seed complete, seconds:',(Date.now()-started)/1000);
